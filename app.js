@@ -1,37 +1,35 @@
 import "dotenv/config";
 import express from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
-import path from "path";
+import Routes from "./routes/manageAgentRoutes.js";
 
-import Routes from './routes/manageAgentRoutes.js';
-
-const __dirname = path.resolve();
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Allow frontend origin
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true,
-}));
+// ===== Dynamic CORS Setup =====
+const allowedOrigins = process.env.CLIENT_URL?.split(",").map(o => o.trim()) || [];
 
-// ===== API Route =====
-app.use("/api/admin/agents", Routes);
-
-// ===== Serve frontend =====
-const frontendPath = path.join(__dirname, "../../frontend/dist");
-app.use(express.static(frontendPath));
-
-// ===== React Router fallback =====
 app.use((req, res, next) => {
-  if (req.method === "GET" && !req.path.startsWith("/api")) {
-    res.sendFile(path.join(frontendPath, "index.html"));
-  } else {
-    next();
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
   }
+
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
 });
+
+// ===== API Routes =====
+app.use("/api/admin/agents", Routes);
 
 export default app;
