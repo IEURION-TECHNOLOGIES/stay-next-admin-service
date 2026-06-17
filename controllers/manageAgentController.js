@@ -212,3 +212,47 @@ export const deleteAgent = async (req, res) => {
     res.status(500).json({ message: "Failed to delete agent." });
   }
 };
+
+
+/**
+ * Suspend agent
+ */
+export const suspendAgent = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const agent = await AgentProfile.findById(req.params.id);
+    if (!agent) return res.status(404).json({ message: "Agent not found." });
+
+    // Update user in auth service
+    await axios.put(`${AUTH_SERVICE_URL}/api/auth/internal/users/${agent.userId}/role`, {
+      isSuspended: true,
+      suspensionReason: reason || "Suspended by admin.",
+    });
+
+    res.status(200).json({ message: "Agent suspended successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to suspend agent." });
+  }
+};
+
+/**
+ * Unsuspend agent
+ */
+export const unsuspendAgent = async (req, res) => {
+  try {
+    const agent = await AgentProfile.findById(req.params.id);
+    if (!agent) return res.status(404).json({ message: "Agent not found." });
+
+    // Update user in auth service
+    await axios.put(`${AUTH_SERVICE_URL}/api/auth/internal/users/${agent.userId}/role`, {
+      isSuspended: false,
+      suspensionReason: "",
+    });
+
+    res.status(200).json({ message: "Agent unsuspended successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to unsuspend agent." });
+  }
+};
