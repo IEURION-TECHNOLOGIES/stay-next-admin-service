@@ -29,6 +29,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// ===== Health Check =====
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", service: "admin-service" });
+});
+
 // ===== API Routes =====
 app.use("/api/admin/agents", Routes);
 
